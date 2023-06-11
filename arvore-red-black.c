@@ -1,175 +1,281 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Definição da estrutura do nó
 typedef struct Node {
-  int data;
-  char color; // 'R' para vermelho, 'B' para preto
-  struct Node *parent;
-  struct Node *left;
-  struct Node *right;
+  int valor;
+  char cor; // 'R' para vermelho, 'B' para preto
+  struct Node *pai;
+  struct Node *esquerda;
+  struct Node *direita;
 } Node;
 
-// Função auxiliar para criar um novo nó
-Node *createNode(int data) {
-  Node *newNode = (Node *)malloc(sizeof(Node));
-  newNode->data = data;
-  newNode->color = 'R'; // Novos nós são sempre vermelhos por padrão
-  newNode->parent = NULL;
-  newNode->left = NULL;
-  newNode->right = NULL;
-  return newNode;
+Node *criaNode(int dado) {
+  Node *novoNo = (Node *)malloc(sizeof(Node));
+  novoNo->valor = dado;
+  novoNo->cor = 'R'; 
+  novoNo->pai = NULL;
+  novoNo->esquerda = NULL;
+  novoNo->direita = NULL;
+  return novoNo;
 }
 
-// Função auxiliar para trocar as cores de dois nós
-void swapColors(Node **a, Node **b) {
-  char temp = (*a)->color;
-  (*a)->color = (*b)->color;
-  (*b)->color = temp;
+void trocaCor(Node **a, Node **b) {
+  char temp = (*a)->cor;
+  (*a)->cor = (*b)->cor;
+  (*b)->cor = temp;
 }
 
-// Função auxiliar para rotacionar o nó para a esquerda
-void rotateLeft(Node **root, Node *node) {
-  Node *rightChild = node->right;
-  node->right = rightChild->left;
+void rotacionaEsquerda(Node **root, Node *node) {
+  Node *filhoDireito = node->direita;
+  node->direita = filhoDireito->esquerda;
 
-  if (rightChild->left != NULL)
-    rightChild->left->parent = node;
+  if (filhoDireito->esquerda != NULL)
+    filhoDireito->esquerda->pai = node;
 
-  rightChild->parent = node->parent;
+  filhoDireito->pai = node->pai;
 
-  if (node->parent == NULL)
-    (*root) = rightChild;
-  else if (node == node->parent->left)
-    node->parent->left = rightChild;
-  else
-    node->parent->right = rightChild;
+  if (node->pai == NULL) (*root) = filhoDireito;
+  else if (node == node->pai->esquerda) node->pai->esquerda = filhoDireito;
+  else node->pai->direita = filhoDireito;
 
-  rightChild->left = node;
-  node->parent = rightChild;
+  filhoDireito->esquerda = node;
+  node->pai = filhoDireito;
 }
 
-// Função auxiliar para rotacionar o nó para a direita
-void rotateRight(Node **root, Node *node) {
-  Node *leftChild = node->left;
-  node->left = leftChild->right;
+void rotacionaDireita(Node **root, Node *node) {
+  Node *filhoEsquerdo = node->esquerda;
+  node->esquerda = filhoEsquerdo->direita;
 
-  if (leftChild->right != NULL)
-    leftChild->right->parent = node;
+  if (filhoEsquerdo->direita != NULL) filhoEsquerdo->direita->pai = node;
 
-  leftChild->parent = node->parent;
+  filhoEsquerdo->pai = node->pai;
 
-  if (node->parent == NULL)
-    (*root) = leftChild;
-  else if (node == node->parent->left)
-    node->parent->left = leftChild;
-  else
-    node->parent->right = leftChild;
+  if (node->pai == NULL) (*root) = filhoEsquerdo;
+  else if (node == node->pai->esquerda) node->pai->esquerda = filhoEsquerdo;
+  else node->pai->direita = filhoEsquerdo;
 
-  leftChild->right = node;
-  node->parent = leftChild;
+  filhoEsquerdo->direita = node;
+  node->pai = filhoEsquerdo;
 }
 
-// Função auxiliar para reequilibrar a árvore após a inserção
 void fixInsertion(Node **root, Node *node) {
-  while (node != (*root) && node->parent->color == 'R') {
-    Node *grandparent = node->parent->parent;
-    Node *uncle;
+  while (node != (*root) && node->pai->cor == 'R') {
+    Node *avo = node->pai->pai;
+    Node *tio;
 
-    if (node->parent == grandparent->left) {
-      uncle = grandparent->right;
+    if (node->pai == avo->esquerda) {
+      tio = avo->direita;
 
-      if (uncle != NULL && uncle->color == 'R') {
-        node->parent->color = 'B';
-        uncle->color = 'B';
-        grandparent->color = 'R';
-        node = grandparent;
-      }
-      else {
-        if (node == node->parent->right) {
-          node = node->parent;
-          rotateLeft(root, node);
+      if (tio != NULL && tio->cor == 'R') {
+        node->pai->cor = 'B';
+        tio->cor = 'B';
+        avo->cor = 'R';
+        node = avo;
+      } else {
+        if (node == node->pai->direita) {
+          node = node->pai;
+          rotacionaEsquerda(root, node);
         }
 
-        node->parent->color = 'B';
-        grandparent->color = 'R';
-        rotateRight(root, grandparent);
+        node->pai->cor = 'B';
+        avo->cor = 'R';
+        rotacionaDireita(root, avo);
       }
-    }
-    else {
-      uncle = grandparent->left;
+    } else {
+      tio = avo->esquerda;
 
-      if (uncle != NULL && uncle->color == 'R') {
-        node->parent->color = 'B';
-        uncle->color = 'B';
-        grandparent->color = 'R';
-        node = grandparent;
-      }
-      else {
-        if (node == node->parent->left) {
-          node = node->parent;
-          rotateRight(root, node);
+      if (tio != NULL && tio->cor == 'R') {
+        node->pai->cor = 'B';
+        tio->cor = 'B';
+        avo->cor = 'R';
+        node = avo;
+      } else {
+        if (node == node->pai->esquerda) {
+          node = node->pai;
+          rotacionaDireita(root, node);
         }
 
-        node->parent->color = 'B';
-        grandparent->color = 'R';
-        rotateLeft(root, grandparent);
+        node->pai->cor = 'B';
+        avo->cor = 'R';
+        rotacionaEsquerda(root, avo);
       }
     }
   }
 
-  (*root)->color = 'B';
+  (*root)->cor = 'B';
 }
 
-// Função auxiliar para inserir um novo nó na árvore Red-Black
 void insertNode(Node **root, int data) {
-  Node *newNode = createNode(data);
+  Node *novo = criaNode(data);
 
-  // Inserção do nó como em uma árvore binária de busca
-  Node *current = (*root);
-  Node *parent = NULL;
+  Node *atual = (*root);
+  Node *pai = NULL;
 
-  while (current != NULL) {
-    parent = current;
+  while (atual != NULL) {
+    pai = atual;
 
-    if (data < current->data)
-      current = current->left;
-    else if (data > current->data)
-      current = current->right;
+    if (data < atual->valor) atual = atual->esquerda;
+    else if (data > atual->valor) atual = atual->direita;
     else {
       printf("Duplicado! Não é possível inserir o mesmo valor.\n");
-      free(newNode);
+      free(novo);
       return;
     }
   }
 
-  newNode->parent = parent;
+  novo->pai = pai;
 
-  if (parent == NULL)
-    (*root) = newNode;
-  else if (data < parent->data)
-    parent->left = newNode;
-  else
-    parent->right = newNode;
+  if (pai == NULL) (*root) = novo;
+  else if (data < pai->valor) pai->esquerda = novo;
+  else pai->direita = novo;
 
-  // Reequilibrar a árvore após a inserção
-  fixInsertion(root, newNode);
+  fixInsertion(root, novo);
 }
 
-// Função auxiliar para imprimir a árvore em ordem
-void inorderTraversal(Node *node) {
-  if (node != NULL) {
-    inorderTraversal(node->left);
-    printf("%d ", node->data);
-    inorderTraversal(node->right);
+void printarArvore(Node *no) {
+  if (no != NULL) {
+    printarArvore(no->esquerda);
+    printf("%d ", no->valor);
+    printarArvore(no->direita);
   }
 }
 
-// Função principal
+Node *buscarNo(Node *root, int data) {
+  if (root == NULL || root->valor == data) return root;
+  if (data < root->valor) return buscarNo(root->esquerda, data);
+  return buscarNo(root->direita, data);
+}
+
+Node *proximoNo(Node *node) {
+  node = node->direita;
+  while (node->esquerda != NULL) node = node->esquerda;
+  return node;
+}
+
+void ajustarRemocao(Node **root, Node *node, Node *parent) {
+  Node *irmao;
+
+  while ((node == NULL || node->cor == 'B') && node != (*root)) {
+    if (node == parent->esquerda) {
+      irmao = parent->direita;
+
+      if (irmao->cor == 'R') {
+        irmao->cor = 'B';
+        parent->cor = 'R';
+        rotacionaEsquerda(root, parent);
+        irmao = parent->direita;
+      }
+
+      if ((irmao->esquerda == NULL || irmao->esquerda->cor == 'B') && (irmao->direita == NULL || irmao->direita->cor == 'B')) {
+        irmao->cor = 'R';
+        node = parent;
+        parent = node->pai;
+      } else {
+        if (irmao->direita == NULL || irmao->direita->cor == 'B') {
+          irmao->esquerda->cor = 'B';
+          irmao->cor = 'R';
+          rotacionaDireita(root, irmao);
+          irmao = parent->direita;
+        }
+
+        irmao->cor = parent->cor;
+        parent->cor = 'B';
+        irmao->direita->cor = 'B';
+        rotacionaEsquerda(root, parent);
+        node = *root;
+        break;
+      }
+    } else {
+      irmao = parent->esquerda;
+
+      if (irmao->cor == 'R') {
+        irmao->cor = 'B';
+        parent->cor = 'R';
+        rotacionaDireita(root, parent);
+        irmao = parent->esquerda;
+      }
+
+      if ((irmao->direita == NULL || irmao->direita->cor == 'B') && (irmao->esquerda == NULL || irmao->esquerda->cor == 'B')){
+        irmao->cor = 'R';
+        node = parent;
+        parent = node->pai;
+      } else {
+        if (irmao->esquerda == NULL || irmao->esquerda->cor == 'B') {
+          irmao->direita->cor = 'B';
+          irmao->cor = 'R';
+          rotacionaEsquerda(root, irmao);
+          irmao = parent->esquerda;
+        }
+
+        irmao->cor = parent->cor;
+        parent->cor = 'B';
+        irmao->esquerda->cor = 'B';
+        rotacionaDireita(root, parent);
+        node = *root;
+        break;
+      }
+    }
+  }
+
+  if (node != NULL) node->cor = 'B';
+}
+
+void substitui(Node **root, Node *pTrocar, Node *substituto) {
+  if (pTrocar->pai == NULL)
+    *root = substituto;
+  else if (pTrocar == pTrocar->pai->esquerda)
+    pTrocar->pai->esquerda = substituto;
+  else
+    pTrocar->pai->direita = substituto;
+
+  if (substituto != NULL)
+    substituto->pai = pTrocar->pai;
+}
+
+void removeNo(Node **root, int data) {
+  Node *no = buscarNo(*root, data);
+
+  if (no == NULL){
+    printf("Valor %d não encontrado na árvore.\n", data);
+    return;
+  }
+
+  Node *pai = no->pai;
+  Node *filho = NULL;
+  char corAnterior = no->cor;
+
+  if (no->esquerda == NULL) {
+    filho = no->direita;
+    substitui(root, no, no->direita);
+  } else if (no->direita == NULL) {
+    filho = no->esquerda;
+    substitui(root, no, no->esquerda);
+  } else {
+    Node *successor = proximoNo(no);
+    corAnterior = successor->cor;
+    filho = successor->direita;
+
+    if (successor->pai == no) pai = successor;
+    else {
+      substitui(root, successor, successor->direita);
+      successor->direita = no->direita;
+      successor->direita->pai = successor;
+    }
+
+    substitui(root, no, successor);
+    successor->esquerda = no->esquerda;
+    successor->esquerda->pai = successor;
+    successor->cor = no->cor;
+  }
+
+  free(no);
+
+  if (corAnterior == 'B') ajustarRemocao(root, filho, pai);
+}
+
 int main() {
   Node *root = NULL;
 
-  // Exemplo de inserção de nós na árvore
   insertNode(&root, 10);
   insertNode(&root, 20);
   insertNode(&root, 30);
@@ -178,9 +284,18 @@ int main() {
   insertNode(&root, 60);
   insertNode(&root, 70);
 
-  // Exemplo de impressão da árvore em ordem
   printf("Árvore Red-Black em ordem: ");
-  inorderTraversal(root);
+  printarArvore(root);
+  printf("\n");
+
+  int value = 30;
+  Node *result = buscarNo(root, value);
+  if (result != NULL) printf("Valor %d encontrado na árvore!\n", value);
+  else printf("Valor %d não encontrado na árvore.\n", value);
+
+  removeNo(&root, value);
+  printf("Árvore Red-Black em ordem: ");
+  printarArvore(root);
   printf("\n");
 
   return 0;
